@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>세계 분쟁 지도 의견 공유</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<style>
+  body { margin:0; font-family: Arial, sans-serif; }
+  h2 { margin: 10px; }
+  #map { height: 55vh; }
+  #panel { padding: 15px; }
+
+  textarea {
+    width: 100%;
+    height: 70px;
+    margin-top: 8px;
+  }
+
+  button {
+    margin-top: 8px;
+    padding: 8px 14px;
+  }
+
+  .comment {
+    padding: 8px;
+    margin-top: 6px;
+    background: #f2f2f2;
+    border-radius: 5px;
+  }
+
+  #newsLink {
+    display: inline-block;
+    margin-top: 6px;
+    margin-bottom: 10px;
+  }
+</style>
+</head>
+
+<body>
+
+<h2>🌍 세계 분쟁 지역 의견 공유 지도</h2>
+
+<div id="map"></div>
+
+<div id="panel">
+  <h3 id="title">지역을 선택하세요</h3>
+  <p id="desc"></p>
+
+  <a id="newsLink" href="#" target="_blank" style="display:none;">
+    🔗 관련 뉴스 기사 보기
+  </a>
+
+  <textarea id="commentInput" placeholder="뉴스를 참고해 자신의 의견을 작성하세요"></textarea><br>
+
+  <button onclick="saveComment()">의견 등록</button>
+
+  <p>총 의견 수: <span id="count">0</span></p>
+
+  <div id="comments"></div>
+</div>
+
+<script>
+  const map = L.map('map').setView([25, 20], 2);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+
+  /* 🔽 분쟁 지역 데이터 */
+  const regions = {
+    ukraine: {
+      name: "우크라이나 전쟁",
+      desc: "러시아의 군사 개입과 국제 질서에 미치는 영향",
+      lat: 48.5, lng: 31,
+      news: "https://www.bbc.com/news/world-europe-60506682"
+    },
+    korea: {
+      name: "한반도 핵 문제",
+      desc: "북한의 핵 개발과 동북아 안보 환경",
+      lat: 38, lng: 127,
+      news: "https://www.bbc.com/news/world-asia-41228181"
+    },
+    israel: {
+      name: "이스라엘-팔레스타인 분쟁",
+      desc: "영토와 민족 자결권을 둘러싼 장기적 갈등",
+      lat: 31.5, lng: 35,
+      news: "https://www.bbc.com/news/world-middle-east-67039975"
+    },
+    taiwan: {
+      name: "대만 해협 긴장",
+      desc: "하나의 중국 원칙과 대만의 정치적 지위 문제",
+      lat: 23.7, lng: 121,
+      news: "https://www.bbc.com/news/world-asia-34729538"
+    }
+  };
+
+  let currentKey = null;
+
+  Object.keys(regions).forEach(key => {
+    const r = regions[key];
+    L.marker([r.lat, r.lng])
+      .addTo(map)
+      .on('click', () => selectRegion(key));
+  });
+
+  function selectRegion(key) {
+    currentKey = key;
+
+    document.getElementById('title').innerText = regions[key].name;
+    document.getElementById('desc').innerText = regions[key].desc;
+
+    const link = document.getElementById('newsLink');
+    link.href = regions[key].news;
+    link.style.display = "inline-block";
+
+    loadComments();
+  }
+
+  function saveComment() {
+    if (!currentKey) {
+      alert("지역을 먼저 선택하세요");
+      return;
+    }
+
+    const text = document.getElementById('commentInput').value;
+    if (!text) return;
+
+    const data = JSON.parse(
+      localStorage.getItem(currentKey) || '[]'
+    );
+
+    data.push(text);
+    localStorage.setItem(currentKey, JSON.stringify(data));
+
+    document.getElementById('commentInput').value = "";
+    loadComments();
+  }
+
+  function loadComments() {
+    const box = document.getElementById('comments');
+    box.innerHTML = "";
+
+    const data = JSON.parse(
+      localStorage.getItem(currentKey) || '[]'
+    );
+
+    document.getElementById('count').innerText = data.length;
+
+    data.forEach(c => {
+      const div = document.createElement("div");
+      div.className = "comment";
+      div.innerText = c;
+      box.appendChild(div);
+    });
+  }
+</script>
+
+</body>
+</html>
